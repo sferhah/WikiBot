@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace KabWikiBot
 {
-    [Table("GeoLog")]
-    public class GeoLog
+    [Table("Log")]
+    public class Log
     {
         [Key]
         public int Id { get; set; }
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
-        public DateTime? EndDate { get; set; }
-        public string Error { get; set; }
+        public DateTime? EndDate { get; set; }        
         public int NumberOfModifiedPages { get; set; }
+        public string Error { get; set; }
 
         [NotMapped]
         public GeoLogState State => (EndDate == null) ? GeoLogState.Pending : ((Error != null) ? GeoLogState.Failed : GeoLogState.Done);
@@ -29,7 +29,7 @@ namespace KabWikiBot
 
     public class AppDbContext : DbContext
     {
-        public DbSet<GeoLog> Logs { get; set; }        
+        public DbSet<Log> Logs { get; set; }        
 
         public static async Task InitAsync()
         {

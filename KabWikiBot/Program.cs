@@ -44,7 +44,7 @@ namespace KabWikiBot
                 
                 var last_execution_date = lastLog?.EndDate ?? lastLog?.StartDate ?? DateTime.MinValue;                
 
-                var log = new GeoLog { StartDate = DateTime.UtcNow };
+                var log = new Log { StartDate = DateTime.UtcNow };
                 context.Logs.Add(log);
                 await context.SaveChangesAsync();
 
@@ -58,7 +58,7 @@ namespace KabWikiBot
                     var credentials = configuration.GetSection("Credentials").Get<Credentials>();
                     var botSettings = configuration.GetSection("BotSettings").Get<BotSettings>();
 
-                  //  credentials = new Credentials { Address = "http://127.0.0.1:81/mediawiki", Username = "admin", Password = "adminadmin" };
+                //    credentials = new Credentials { Address = "http://127.0.0.1:8080/mediawiki", Username = "admin", Password = "adminadmin" };
 
                     KabLatinizerBot bot = await BotFactory.CreateInstanceAsync<KabLatinizerBot>(credentials.Address, credentials.Username, credentials.Password);
 
@@ -74,7 +74,7 @@ namespace KabWikiBot
                 }
                 catch (Exception e)
                 {
-                    log.Error = e.Message;
+                    log.Error = e.ToString();
                 }
 
                 log.EndDate = DateTime.UtcNow;
