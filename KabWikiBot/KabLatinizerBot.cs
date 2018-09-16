@@ -33,16 +33,28 @@ namespace KabWikiBot
                 await base.SavePageAsync(botPage, "add user(s)", false);
             }
 
-            return await this.LatinizeAsync(recent_changes, stalkedUsers);
+
+            var pendingUsers = botPage.Content.GetPendingUsers();
+
+            List<UserContrib> contribs = new List<UserContrib>();
+
+            foreach (var pendingUser in pendingUsers)
+            {
+                contribs.AddRange(await base.GetUserContibutionsAsync(pendingUser, 500));               
+            }
+
+            var distinctPages = contribs.Select(x => x.Title)
+                                        .Distinct()
+                                        .Concat(recent_changes
+                                         .Where(x => stalkedUsers.Contains(x.User))
+                                         .Select(x => x.Title)
+                                         .Distinct());
+
+            return await this.LatinizeAsync(distinctPages, stalkedUsers);
         }
 
-        public async Task<int> LatinizeAsync(RecentChange[] recent_changes, IEnumerable<string> stalkedUsers)
-        {
-            var distinctPages = recent_changes
-                .Where(x => stalkedUsers.Contains(x.User))
-                .Select(x => x.Title)
-                .Distinct()
-                .ToList();
+        public async Task<int> LatinizeAsync(IEnumerable<string> distinctPages, IEnumerable<string> stalkedUsers)
+        {   
 
             List<Page> invalidPages = new List<Page>();
 
@@ -63,8 +75,10 @@ namespace KabWikiBot
 
             foreach (var page in invalidPages)
             {
-                page.Content.ReplaceGreekLetters();
-                await base.SavePageAsync(page, "Replace greek letters with latin letters.", true);
+                if (page.Content.ReplaceGreekLetters())
+                {
+                    await base.SavePageAsync(page, "Replace greek letters with latin letters.", true);
+                }                
             }
 
             return invalidPages.Count;

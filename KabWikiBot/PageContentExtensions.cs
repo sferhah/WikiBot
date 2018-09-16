@@ -30,30 +30,39 @@ namespace KabWikiBot
             return false;
         }
 
-        public static void ReplaceGreekLetters(this PageContent pageContent)
+        public static bool ReplaceGreekLetters(this PageContent pageContent)
         {
+            string originalText = pageContent.Text;
+
             foreach (var kv in dictionary)
             {
-                pageContent.Text = pageContent.Text.Replace(kv.Key, kv.Value);
+                originalText = originalText.Replace(kv.Key, kv.Value);
             }
+
+            if(pageContent.Text == originalText)
+            {
+                return false;
+            }
+
+            pageContent.Text = originalText;
+
+            return true;
         }
 
-        public static string[] GetStalkedUsers(this PageContent pageContent)
-        {
-            return pageContent.Sections.Where(x => x.Title == "Confirmed").FirstOrDefault()?
-                .Text.Replace("\n", string.Empty)
-                .Split("*", StringSplitOptions.RemoveEmptyEntries)
-                ?? new string[] { };
-        }
+        public static string[] GetStalkedUsers(this PageContent pageContent)        
+              => pageContent.GetUsers("Confirmed");
 
+        public static string[] GetPendingUsers(this PageContent pageContent)
+              => pageContent.GetUsers("Pending");
 
         public static string[] GetSuspectedUsers(this PageContent pageContent)
-        {
-            return pageContent.Sections.Where(x => x.Title == "Suspected").FirstOrDefault()?
+            => pageContent.GetUsers("Suspected");
+
+        private static string[] GetUsers(this PageContent pageContent, string sectionName) 
+            => pageContent.Sections.Where(x => x.Title == sectionName).FirstOrDefault()?
                 .Text.Replace("\n", string.Empty)
                 .Split("*", StringSplitOptions.RemoveEmptyEntries)
                 ?? new string[] { };
-        }
 
         public static void AddNewSuspect(this PageContent pageContent, string user)
         {
