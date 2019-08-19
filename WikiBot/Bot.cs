@@ -229,8 +229,7 @@ namespace WikiBot
                 : resp.GetSubstring("<a id=\"aa\" name=\"aa\">", "class=\"printfooter\"");
 
             return new Regex("<a href=\"(?://)?([^\"/]+)").Matches(src).Cast<Match>().Select(m => m.Groups[1].Value).ToList();
-        }
-
+        }      
 
         public async Task<Page> GetPageByTitleAsync(string title)
         {
@@ -590,9 +589,7 @@ namespace WikiBot
             if (respStr.Contains("<error"))
             {
                 throw new WikiBotException(string.Format("Failed to delete page \"{0}\".", page.Title));
-            }
-
-            page.Content.Title = String.Empty;
+            }            
         }
 
 
@@ -1209,6 +1206,34 @@ namespace WikiBot
             string item = m.Groups[1].Value;
             string xmlSrc = await this.client.GetAsync("http://www.wikidata.org/wiki/Special:EntityData/" + item.UrlEncode() + ".xml");    // raises "404: Not found" if not found
             return XElement.Parse(xmlSrc);
+        }
+
+        public async Task<WikidataItem> GetWikidataItemAsync(string site, string title)
+        {
+            string resp = await client.GetAsync($"https://www.wikidata.org/w/api.php?action=wbgetentities&format=xml&sites={site}&titles={title.UrlEncode()}&normalize=true&props=infositelinks");
+            var xml = XElement.Parse(resp);
+
+            var item = new WikidataItem
+            {
+                Id = xml.Descendants("entity").First().Attribute("id").Value,
+                Sitelinks = xml.Descendants("sitelink").Select(x => new Tuple<string, string>(x.Attribute("site").Value, x.Attribute("title").Value)).ToList(),
+            };
+
+            return item.Id == "-1" ? null : item;
+        }
+
+        public async Task<string> MergeWikidataItemsAsync(string fromItemId, string toItemId)
+        {
+            string resp = await GetAsync<string>(ApiPath + "?action=query&format=xml&meta=userinfo%7Ctokens");
+            
+            var token = XElement.Parse(resp).Descendants("tokens").First().Attribute("csrftoken").Value;
+
+            return await PostAsync<string>(ApiPath, $"action=wbmergeitems&format=xml&fromid={fromItemId}&toid={toItemId}&bot=1&token={token.UrlEncode()}");
+        }
+
+        public async Task<string> PurgCacheAsync(string title)
+        {
+            return await PostAsync<string>(ApiPath, $"action=purge&format=json&formatversion=2&titles={title.UrlEncode()}");
         }
 
     }
