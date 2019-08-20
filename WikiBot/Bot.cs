@@ -1216,6 +1216,7 @@ namespace WikiBot
             var item = new WikidataItem
             {
                 Id = xml.Descendants("entity").First().Attribute("id").Value,
+                RevisionId = xml.Descendants("entity").First().Attribute("lastrevid").Value,                
                 Sitelinks = xml.Descendants("sitelink").Select(x => new Tuple<string, string>(x.Attribute("site").Value, x.Attribute("title").Value)).ToList(),
             };
 
@@ -1229,6 +1230,15 @@ namespace WikiBot
             var token = XElement.Parse(resp).Descendants("tokens").First().Attribute("csrftoken").Value;
 
             return await PostAsync<string>(ApiPath, $"action=wbmergeitems&format=xml&fromid={fromItemId}&toid={toItemId}&bot=1&token={token.UrlEncode()}");
+        }
+
+        public async Task<string> AddSiteLinkAsync(string site, string title, WikidataItem item)
+        {
+            string resp = await GetAsync<string>(ApiPath + "?action=query&format=xml&meta=userinfo%7Ctokens");
+
+            var token = XElement.Parse(resp).Descendants("tokens").First().Attribute("csrftoken").Value;
+
+            return await PostAsync<string>(ApiPath, $"action=wbsetsitelink&format=xml&id={item.Id}&linksite={site}&linktitle={title.UrlEncode()}&baserevid={item.RevisionId}&bot=1&token={token.UrlEncode()}");
         }
 
         public async Task<string> PurgCacheAsync(string title)
